@@ -29,7 +29,7 @@ rat = pygame.transform.scale(pygame.image.load(RAT_IMAGE), (BLOCK_SIZE, BLOCK_SI
 exit_img = pygame.transform.scale(pygame.image.load(EXIT_IMAGE), (BLOCK_SIZE, BLOCK_SIZE))
 
 # Definição do mapa
-MAP_FILE = 'mapa2.txt'
+MAP_FILE = 'mapa3.txt'
 
 # Leitura do mapa do arquivo
 def read_map(file_path):
