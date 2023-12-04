@@ -27,7 +27,7 @@ dog = pygame.transform.scale(pygame.image.load(DOG_IMAGE), (BLOCK_SIZE, BLOCK_SI
 exit_img = pygame.transform.scale(pygame.image.load(EXIT_IMAGE), (BLOCK_SIZE, BLOCK_SIZE))
 
 # Definição do mapa
-MAP_FILE = 'mapa2.txt'
+MAP_FILE = 'mapa.txt'
 
 # Leitura do mapa
 def read_map(file_path):
@@ -93,7 +93,12 @@ def find_path_dfs(posicao_atual, pos_saida, visited):
 def main():
     dog_pos = None
     pos_saida = None
-
+    pygame.mixer.init()
+    bark_sound = pygame.mixer.Sound('bark.mp3')
+    bark_sound.set_volume(5)
+    pygame.mixer.music.load('dogsound.mp3')
+    pygame.mixer.music.play(-1)
+    pygame.mixer.music.set_volume(0.1)
     # Encontrar posição inicial do dog e da saída
     for row in range(rows):
         for col in range(cols):
@@ -114,11 +119,12 @@ def main():
 
     if path_to_exit:
         # Quando o dog encontra a saída
+        pygame.mixer.music.stop()
+        bark_sound.play()
         font = pygame.font.Font(None, 24)
-        text = font.render('Toby encontrou a saída!', True, WHITE)
+        text = font.render('Toby encontrou o osso!', True, WHITE)
         screen.blit(text, (50, 50))
         pygame.display.flip()
-
 
     while True:
         for event in pygame.event.get():
