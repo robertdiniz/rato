@@ -2,10 +2,9 @@
 import pygame
 import sys
 
-# Inicialização do Pygame
 pygame.init()
 
-# Definição de cores
+# Cores
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
@@ -13,35 +12,31 @@ YELLOW = (255, 255, 0)
 BLUE = (0, 0, 255)
 PURPLE = (128, 0, 128)
 
-# Tamanho da tela e do bloco
 BLOCK_SIZE = 40
 
-# Caminhos das imagens
+# Imagens
 GROUND_IMAGE = 'grass.jpg'
 WALL_IMAGE = 'wall.png'
-RAT_IMAGE = 'dog.webp'
+DOG_IMAGE = 'dog.webp'
 EXIT_IMAGE = 'bone.png'
 
 # Carregar imagens e redimensionar para BLOCK_SIZE x BLOCK_SIZE pixels
 ground = pygame.transform.scale(pygame.image.load(GROUND_IMAGE), (BLOCK_SIZE, BLOCK_SIZE))
 wall = pygame.transform.scale(pygame.image.load(WALL_IMAGE), (BLOCK_SIZE, BLOCK_SIZE))
-rat = pygame.transform.scale(pygame.image.load(RAT_IMAGE), (BLOCK_SIZE, BLOCK_SIZE))
+dog = pygame.transform.scale(pygame.image.load(DOG_IMAGE), (BLOCK_SIZE, BLOCK_SIZE))
 exit_img = pygame.transform.scale(pygame.image.load(EXIT_IMAGE), (BLOCK_SIZE, BLOCK_SIZE))
 
 # Definição do mapa
-MAP_FILE = 'mapa3.txt'
+MAP_FILE = 'mapa2.txt'
 
-
-# Leitura do mapa do arquivo
+# Leitura do mapa
 def read_map(file_path):
     with open(file_path, 'r') as file:
         lines = file.readlines()
         return [list(line.strip()) for line in lines]
 
-# Inicialização do mapa
 game_map = read_map(MAP_FILE)
 
-# Inicialização do Pygame
 rows = len(game_map)
 cols = len(game_map[0])
 SCREEN_SIZE = (cols * BLOCK_SIZE, rows * BLOCK_SIZE)
@@ -71,54 +66,51 @@ def is_valid_position(pos):
     row, col = pos
     return 0 <= row < rows and 0 <= col < cols and game_map[row][col] != '1'
 
-# Função para encontrar o caminho usando busca em profundidade (Depth-First Search - DFS)
-def find_path_dfs(current_pos, exit_pos, visited):
-    if current_pos == exit_pos:
-        return [current_pos]
+def find_path_dfs(posicao_atual, pos_saida, visited):
+    if posicao_atual == pos_saida:
+        return [posicao_atual]
 
-    visited.add(current_pos)
+    visited.add(posicao_atual)
 
     directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
 
     for direction in directions:
-        new_row, new_col = current_pos[0] + direction[0], current_pos[1] + direction[1]
+        new_row, new_col = posicao_atual[0] + direction[0], posicao_atual[1] + direction[1]
         new_pos = (new_row, new_col)
 
         if is_valid_position(new_pos) and new_pos not in visited:
             visited.add(new_pos)  # Adiciona a nova posição antes da exploração
             pygame.time.delay(100)  # Pausa de 100 milissegundos para visualização
             draw_map_with_images(game_map)  # Redesenha o mapa com as explorações
-            screen.blit(rat, (new_col * BLOCK_SIZE, new_row * BLOCK_SIZE))  # Desenha o dog na nova posição
+            screen.blit(dog, (new_col * BLOCK_SIZE, new_row * BLOCK_SIZE))  # Desenha o dog na nova posição
             pygame.display.flip()
-            path = find_path_dfs(new_pos, exit_pos, visited.copy())
+            path = find_path_dfs(new_pos, pos_saida, visited.copy())
             if path:
-                return [current_pos] + path
+                return [posicao_atual] + path
 
     return []
 
-
-# Função principal do jogo
 def main():
-    rat_pos = None
-    exit_pos = None
+    dog_pos = None
+    pos_saida = None
 
     # Encontrar posição inicial do dog e da saída
     for row in range(rows):
         for col in range(cols):
             if game_map[row][col] == 'm':
-                rat_pos = (row, col)
+                dog_pos = (row, col)
             elif game_map[row][col] == 'e':
-                exit_pos = (row, col)
+                pos_saida = (row, col)
 
     # Verifique se o dog e a saída foram encontrados
-    if rat_pos is None or exit_pos is None:
+    if dog_pos is None or pos_saida is None:
         print("Erro: Dog ou saída não encontrados no mapa.")
         pygame.quit()
         sys.exit()
 
 
     visited = set()
-    path_to_exit = find_path_dfs(rat_pos, exit_pos, visited)
+    path_to_exit = find_path_dfs(dog_pos, pos_saida, visited)
 
     if path_to_exit:
         # Quando o dog encontra a saída
