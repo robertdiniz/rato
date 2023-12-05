@@ -1,129 +1,134 @@
-
 import pygame
 import sys
+import time
 
 pygame.init()
 
 # Cores
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
-RED = (255, 0, 0)
-YELLOW = (255, 255, 0)
-BLUE = (0, 0, 255)
-PURPLE = (128, 0, 128)
 
 BLOCK_SIZE = 40
 
-# Imagens
-GROUND_IMAGE = 'grass.jpg'
-WALL_IMAGE = 'wall.png'
-DOG_IMAGE = 'dog.webp'
-EXIT_IMAGE = 'bone.png'
+# Carregar imagens para os símbolos
+ground_image = pygame.transform.scale(pygame.image.load('grass.jpg'), (BLOCK_SIZE, BLOCK_SIZE))
+wall_image = pygame.transform.scale(pygame.image.load('wall.png'), (BLOCK_SIZE, BLOCK_SIZE))
+dog_image = pygame.transform.scale(pygame.image.load('dog.webp'), (BLOCK_SIZE, BLOCK_SIZE))
+exit_image = pygame.transform.scale(pygame.image.load('bone.png'), (BLOCK_SIZE, BLOCK_SIZE))
+pygame.mixer.init()
+bark_sound = pygame.mixer.Sound('bark.mp3')
 
-# Carregar imagens e redimensionar para BLOCK_SIZE x BLOCK_SIZE pixels
-ground = pygame.transform.scale(pygame.image.load(GROUND_IMAGE), (BLOCK_SIZE, BLOCK_SIZE))
-wall = pygame.transform.scale(pygame.image.load(WALL_IMAGE), (BLOCK_SIZE, BLOCK_SIZE))
-dog = pygame.transform.scale(pygame.image.load(DOG_IMAGE), (BLOCK_SIZE, BLOCK_SIZE))
-exit_img = pygame.transform.scale(pygame.image.load(EXIT_IMAGE), (BLOCK_SIZE, BLOCK_SIZE))
-
-# Definição do mapa
-MAP_FILE = 'mapa.txt'
-
-# Leitura do mapa
+# Leitura do arquivo mapa.txt
 def read_map(file_path):
     with open(file_path, 'r') as file:
         lines = file.readlines()
         return [list(line.strip()) for line in lines]
 
-game_map = read_map(MAP_FILE)
-
-rows = len(game_map)
-cols = len(game_map[0])
-SCREEN_SIZE = (cols * BLOCK_SIZE, rows * BLOCK_SIZE)
-screen = pygame.display.set_mode(SCREEN_SIZE)
-pygame.display.set_caption('Toby caçando osso')
-
-# Função para desenhar o mapa com imagens
 def draw_map_with_images(map_array):
+    rows = len(map_array)
+    cols = len(map_array[0])
+    screen_size = (cols * BLOCK_SIZE, rows * BLOCK_SIZE)
+    screen = pygame.display.set_mode(screen_size)
+    pygame.display.set_caption('Toby')
+
+    symbols = {
+        '0': ground_image,
+        '1': wall_image,
+        'm': dog_image,
+        'e': exit_image
+    }
+
     for row in range(rows):
         for col in range(cols):
             x = col * BLOCK_SIZE
             y = row * BLOCK_SIZE
+            symbol_image = symbols.get(map_array[row][col], None)
+            if symbol_image:
+                if map_array[row][col] == 'e':
+                    screen.blit(symbols['0'], (x, y))  # Desenha o chão ('0') primeiro
+                    screen.blit(symbol_image, (x, y))  # Depois desenha o osso por cima
+                if map_array[row][col] == 'm':
+                    screen.blit(symbols['0'], (x, y))  # Desenha o chão ('0') primeiro
+                    screen.blit(symbol_image, (x, y))  # Depois desenha o cachorro por cima
+                else:
+                    screen.blit(symbol_image, (x, y))
+    
+    pygame.display.flip()
+    return screen
 
-            if map_array[row][col] == '0':
-                screen.blit(ground, (x, y))
-            elif map_array[row][col] == '1':
-                screen.blit(wall, (x, y))
-            elif map_array[row][col] == 'm':
-                screen.blit(ground, (x, y))  # Desenha o chão no lugar do 'm'
-            elif map_array[row][col] == 'e':
-                screen.blit(ground, (x, y))  # Desenha o chão
-                screen.blit(exit_img, (x, y))  # Desenha o osso acima do chão
+def find_path_backtracking(current_pos, exit_pos, game_map, visited, screen):
+    if current_pos == exit_pos:
+        return True
 
+    moves = [(0, -1), (0, 1), (-1, 0), (1, 0)]
 
-# Função para verificar se uma posição é válida no mapa
-def is_valid_position(pos):
-    row, col = pos
-    return 0 <= row < rows and 0 <= col < cols and game_map[row][col] != '1'
+    for move in moves:
+        new_row = current_pos[0] + move[0]
+        new_col = current_pos[1] + move[1]
 
-def find_path_dfs(posicao_atual, pos_saida, visited):
-    if posicao_atual == pos_saida:
-        return [posicao_atual]
-
-    visited.add(posicao_atual)
-
-    directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
-
-    for direction in directions:
-        new_row, new_col = posicao_atual[0] + direction[0], posicao_atual[1] + direction[1]
-        new_pos = (new_row, new_col)
-
-        if is_valid_position(new_pos) and new_pos not in visited:
-            visited.add(new_pos)  # Adiciona a nova posição antes da exploração
-            pygame.time.delay(100)  # Pausa de 100 milissegundos para visualização
-            draw_map_with_images(game_map)  # Redesenha o mapa com as explorações
-            screen.blit(dog, (new_col * BLOCK_SIZE, new_row * BLOCK_SIZE))  # Desenha o dog na nova posição
+        if 0 <= new_row < len(game_map) and 0 <= new_col < len(game_map[0]) and game_map[new_row][new_col] != '1' and (new_row, new_col) not in visited:
+            visited.add((new_row, new_col))
+            game_map[current_pos[0]][current_pos[1]] = '0'  # atualiza piso quando cachorro passar
+            game_map[new_row][new_col] = 'm'  # dog recebe nova posição
+            draw_map_with_images(game_map)  # redesenha o mapa
             pygame.display.flip()
-            path = find_path_dfs(new_pos, pos_saida, visited.copy())
-            if path:
-                return [posicao_atual] + path
+            time.sleep(0.2) 
+            updated_pos = (new_row, new_col)
+            
+            if find_path_backtracking(updated_pos, exit_pos, game_map, visited, screen):
+                return True
 
-    return []
+    return False
+
+def find_path_dfs(start_pos, exit_pos, game_map, screen):
+    visited = set()
+    visited.add(start_pos)
+    
+    return find_path_backtracking(start_pos, exit_pos, game_map, visited, screen)
 
 def main():
-    dog_pos = None
-    pos_saida = None
-    pygame.mixer.init()
-    bark_sound = pygame.mixer.Sound('bark.mp3')
-    bark_sound.set_volume(5)
+    MAP_FILE = 'mapa.txt'
+    game_map = read_map(MAP_FILE)
+    screen = draw_map_with_images(game_map)
     pygame.mixer.music.load('dogsound.mp3')
+    pygame.mixer.music.set_volume(0.5)
     pygame.mixer.music.play(-1)
-    pygame.mixer.music.set_volume(0.1)
+
+    start_pos = None
+    exit_pos = None
+    rows = len(game_map)
+    cols = len(game_map[0])
+    
     # Encontrar posição inicial do dog e da saída
     for row in range(rows):
         for col in range(cols):
             if game_map[row][col] == 'm':
-                dog_pos = (row, col)
+                start_pos = (row, col)
             elif game_map[row][col] == 'e':
-                pos_saida = (row, col)
+                exit_pos = (row, col)
 
-    # Verifique se o dog e a saída foram encontrados
-    if dog_pos is None or pos_saida is None:
-        print("Erro: Dog ou saída não encontrados no mapa.")
+    # Verifique se a posição inicial e a saída foram encontradas
+    if start_pos is None or exit_pos is None:
+        print("Erro: Posição inicial ou saída não encontrada no mapa.")
         pygame.quit()
         sys.exit()
 
+    path_to_exit = find_path_dfs(start_pos, exit_pos, game_map, screen)
 
-    visited = set()
-    path_to_exit = find_path_dfs(dog_pos, pos_saida, visited)
-
+    # Dog achou o osso
     if path_to_exit:
-        # Quando o dog encontra a saída
         pygame.mixer.music.stop()
         bark_sound.play()
-        font = pygame.font.Font(None, 24)
-        text = font.render('Toby encontrou o osso!', True, WHITE)
-        screen.blit(text, (50, 50))
+        font = pygame.font.Font(None, 36)
+        text = font.render('Toby achou o osso!', True, WHITE)
+        text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
+        screen.blit(text, text_rect)
+        pygame.display.flip()
+    else:
+        font = pygame.font.Font(None, 36)
+        text = font.render('Nenhum caminho foi encontrado!', True, WHITE)
+        text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
+        screen.blit(text, text_rect)
         pygame.display.flip()
 
     while True:
@@ -131,12 +136,6 @@ def main():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_r:  # Reiniciar
-                    main()  # Chamando main novamente para reiniciar
-                elif event.key == pygame.K_q:  # Sair
-                    pygame.quit()
 
-# Execute o jogo
 if __name__ == "__main__":
     main()
