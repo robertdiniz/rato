@@ -56,19 +56,19 @@ def draw_map_with_images(map_array):
     pygame.display.flip()
     return screen
 
-def find_path_backtracking(current_pos, exit_pos, game_map, visited, screen):
-    if current_pos == exit_pos:
+def find_path_backtracking(pos_atual, exit_pos, game_map, visited, screen):
+    if pos_atual == exit_pos:
         return True
 
-    moves = [(0, -1), (0, 1), (-1, 0), (1, 0)]
+    moves = [(0, 1), (0, -1), (-1, 0), (1, 0)]
 
     for move in moves:
-        new_row = current_pos[0] + move[0]
-        new_col = current_pos[1] + move[1]
+        new_row = pos_atual[0] + move[0]
+        new_col = pos_atual[1] + move[1]
 
         if 0 <= new_row < len(game_map) and 0 <= new_col < len(game_map[0]) and game_map[new_row][new_col] != '1' and (new_row, new_col) not in visited:
             visited.add((new_row, new_col))
-            game_map[current_pos[0]][current_pos[1]] = '0'  # atualiza piso quando cachorro passar
+            game_map[pos_atual[0]][pos_atual[1]] = '0'  # atualiza piso quando cachorro passar
             game_map[new_row][new_col] = 'm'  # dog recebe nova posição
             draw_map_with_images(game_map)  # redesenha o mapa
             pygame.display.flip()
